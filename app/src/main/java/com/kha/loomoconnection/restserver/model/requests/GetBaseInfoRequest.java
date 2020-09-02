@@ -7,8 +7,6 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ObstacleAvoidanceRequest extends BaseRsp {
+public class GetBaseInfoRequest extends BaseRsp {
     public boolean trigger;
-    public float distance;
 }
-

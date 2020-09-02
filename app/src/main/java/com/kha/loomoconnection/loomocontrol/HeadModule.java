@@ -175,8 +175,10 @@ public class HeadModule implements BaseModule{
     public void switchEmoji(boolean emojiMode) {
         if (emojiMode) {
             ((MainActivity)ContextBinder.context).switchToEmoji();
+            HeadModule.emojiMode = true;
         } else {
             ((EmojiActivity)ContextBinder.context).switchToMain();
+            HeadModule.emojiMode = false;
         }
     }
 

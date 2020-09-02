@@ -4,6 +4,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.kha.loomoconnection.restserver.controller.ContextBinder;
+import com.kha.loomoconnection.restserver.model.data.BaseInfo;
 import com.kha.loomoconnection.restserver.model.data.CPProgress;
 import com.kha.loomoconnection.restserver.model.data.Point2D;
 import com.kha.loomoconnection.restserver.model.data.Point2Dtheta;
@@ -46,6 +47,7 @@ public class LocomotionModule implements BaseModule {
     public boolean meterAvail = false;
     public boolean meterInitialized = false;
     public Pose2D previousPos;
+    public boolean VLSenabled = false;
 
 
     public static LocomotionModule getInstance() {return instance;}
@@ -124,6 +126,14 @@ public class LocomotionModule implements BaseModule {
         return mBase.getOdometryPose(microseconds);
     }
 
+    public PoseVLS getLatestOdometryByVLS() {
+        return mBase.getVLSPose(-1);
+    }
+
+    public PoseVLS getOdometryByTimeByVLS(long microseconds) {
+        return mBase.getVLSPose(microseconds);
+    }
+
     public void setOrigin(Pose2D pose2D) {
         mBase.cleanOriginalPoint();
         mBase.setOriginalPoint(pose2D);
@@ -154,13 +164,14 @@ public class LocomotionModule implements BaseModule {
         }
         if (currModeString.equals("navigation") && !currModeString.equals(mode)) {
             //重置所有点
+            VLSenabled = false;
+            mBase.stopVLS();
             cleanCheckPoints();
         } else if (currModeString.equals("follow") && !currModeString.equals(mode)) {
             //重置识别的人
             if (tracking) {
                 VisionModule.getInstance().stopTrack();
             }
-            VisionModule.getInstance().stopDTS();
         }
         switch (mode) {
             case "raw":
@@ -168,7 +179,6 @@ public class LocomotionModule implements BaseModule {
                 break;
             case "follow":
                 mBase.setControlMode(Base.CONTROL_MODE_FOLLOW_TARGET);
-                VisionModule.getInstance().bootDTS();
                 break;
             case "navigation":
                 mBase.setControlMode(Base.CONTROL_MODE_NAVIGATION);
@@ -178,6 +188,7 @@ public class LocomotionModule implements BaseModule {
                     public void onOpened() {
                         // set navigation data source
                         mBase.setNavigationDataSource(Base.NAVIGATION_SOURCE_TYPE_VLS);
+                        VLSenabled = true;
                     }
 
                     @Override
@@ -293,21 +304,23 @@ public class LocomotionModule implements BaseModule {
         return result;
     }
 
-    public void toggleObstacleAvoidance(boolean trigger){
-        if (trigger){
-            Logger.i("loomo", "called");
-            mBase.setUltrasonicObstacleAvoidanceEnabled(true);
-            mBase.setUltrasonicObstacleAvoidanceDistance(0.5f);
-            mBase.setObstacleStateChangeListener(new ObstacleStateChangedListener() {
-                @Override
-                public void onObstacleStateChanged(int ObstacleAppearance) {
-                    VoiceModule.getInstance().speak("快撞啦！");
-                    meetObstacle = true;
-                }
+    public void toggleObstacleAvoidance(boolean trigger, float distance){
+        if (mBase.getControlMode() == Base.CONTROL_MODE_NAVIGATION) {
+            if (trigger){
+                Logger.i("loomo", "called");
+                mBase.setUltrasonicObstacleAvoidanceEnabled(true);
+                mBase.setUltrasonicObstacleAvoidanceDistance(distance);
+                mBase.setObstacleStateChangeListener(new ObstacleStateChangedListener() {
+                    @Override
+                    public void onObstacleStateChanged(int ObstacleAppearance) {
+                        VoiceModule.getInstance().speak("快撞啦！");
+                        meetObstacle = true;
+                    }
 
-            });
-        } else {
-            mBase.setUltrasonicObstacleAvoidanceEnabled(false);
+                });
+            } else {
+                mBase.setUltrasonicObstacleAvoidanceEnabled(false);
+            }
         }
     }
 
@@ -346,6 +359,34 @@ public class LocomotionModule implements BaseModule {
                 }
             }
         };
+        TimerUtils.timer.schedule(task, 500);
+    }
+
+    public BaseInfo fetchBaseInfo() {
+        BaseInfo info = new BaseInfo();
+        int currMode = mBase.getControlMode();
+        String currModeString;
+        switch (currMode) {
+            case Base.CONTROL_MODE_RAW:
+                currModeString = "raw";
+                break;
+            case Base.CONTROL_MODE_FOLLOW_TARGET:
+                currModeString = "follow";
+                break;
+            case Base.CONTROL_MODE_NAVIGATION:
+                currModeString = "navigation";
+                break;
+            default:
+                currModeString = "not valid";
+        }
+        info.setMode(currModeString);
+        info.setAngularVelocity(mBase.getAngularVelocity().getSpeed());
+        info.setLinearVelocity(mBase.getLinearVelocity().getSpeed());
+        info.setAngularVelocityLimit(mBase.getAngularVelocityLimit());
+        info.setLinearVelocityLimit(mBase.getLinearVelocityLimit());
+        info.setTotalMileage(mBase.getMileage());
+        info.setPower(mBase.getRobotPower());
+        return info;
     }
 
 

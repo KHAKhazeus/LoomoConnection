@@ -19,6 +19,7 @@ import com.kha.loomoconnection.restserver.model.requests.CleanCPRequest;
 import com.kha.loomoconnection.restserver.model.requests.ClearMetersRequest;
 import com.kha.loomoconnection.restserver.model.requests.EmojiRequest;
 import com.kha.loomoconnection.restserver.model.requests.FollowRequest;
+import com.kha.loomoconnection.restserver.model.requests.GetBaseInfoRequest;
 import com.kha.loomoconnection.restserver.model.requests.GetMetersRequest;
 import com.kha.loomoconnection.restserver.model.requests.GetOdometryByTimeRequest;
 import com.kha.loomoconnection.restserver.model.requests.GetOdometryRequest;
@@ -124,15 +125,6 @@ public class LoomoController {
         return rsp;
     }
 
-
-    @PostMapping("/loomo/test")
-    BaseRsp demo(@RequestBody EmojiRequest requestData) {
-        BaseRsp rsp = new BaseRsp();
-        rsp.setId(requestData.getId());
-//        HeadModule.getInstance().makeEmoji();
-        return rsp;
-    }
-
     @PostMapping("/loomo/getImage")
     BaseRsp getImage(@RequestBody ImageRequest requestData) {
         BaseRsp rsp = new BaseRsp();
@@ -167,8 +159,8 @@ public class LoomoController {
     @PostMapping("/loomo/setOrigin")
     BaseRsp setOrigin(@RequestBody SetOriginRequest requestData) {
         BaseRsp rsp = new BaseRsp();
-        LocomotionModule.getInstance().setOrigin(new Pose2D(requestData.point2D.getX(),
-                requestData.point2D.getY(), 0, 0, 0, 0));
+        LocomotionModule.getInstance().setOrigin(new Pose2D(requestData.getX(),
+                requestData.getY(), 0, 0, 0, 0));
         rsp.setId(requestData.getId());
         rsp.setSuccess(true);
         return rsp;
@@ -303,7 +295,7 @@ public class LoomoController {
         BaseRsp rsp = new BaseRsp();
         rsp.setId(requestData.getId());
         rsp.setSuccess(true);
-        LocomotionModule.getInstance().toggleObstacleAvoidance(requestData.trigger);
+        LocomotionModule.getInstance().toggleObstacleAvoidance(requestData.trigger, requestData.distance);
         return rsp;
     }
 
@@ -335,7 +327,11 @@ public class LoomoController {
         rsp.setId(requestData.getId());
         rsp.setSuccess(true);
         if (requestData.trigger){
-            rsp.setData(LocomotionModule.getInstance().getLatestOdometry());
+            if (LocomotionModule.getInstance().VLSenabled) {
+                rsp.setData(LocomotionModule.getInstance().getLatestOdometryByVLS());
+            } else{
+                rsp.setData(LocomotionModule.getInstance().getLatestOdometry());
+            }
         }
         return rsp;
     }
@@ -346,7 +342,11 @@ public class LoomoController {
         rsp.setId(requestData.getId());
         rsp.setSuccess(true);
         if (requestData.trigger){
-            rsp.setData(LocomotionModule.getInstance().getOdometryByTime(requestData.microseconds));
+            if (LocomotionModule.getInstance().VLSenabled) {
+                rsp.setData(LocomotionModule.getInstance().getOdometryByTimeByVLS(requestData.microseconds));
+            } else{
+                rsp.setData(LocomotionModule.getInstance().getOdometryByTime(requestData.microseconds));
+            }
         }
         return rsp;
     }
@@ -367,6 +367,17 @@ public class LoomoController {
         rsp.setSuccess(true);
         if (requestData.trigger) {
             rsp.setData(SensorModule.getInstance().fetchSensorData());
+        }
+        return rsp;
+    }
+
+    @PostMapping("/loomo/baseInfo")
+    BaseRsp fetchBaseInfo(@RequestBody GetBaseInfoRequest requestData) {
+        BaseRsp rsp = new BaseRsp();
+        rsp.setId(requestData.getId());
+        rsp.setSuccess(true);
+        if (requestData.trigger) {
+            rsp.setData(LocomotionModule.getInstance().fetchBaseInfo());
         }
         return rsp;
     }

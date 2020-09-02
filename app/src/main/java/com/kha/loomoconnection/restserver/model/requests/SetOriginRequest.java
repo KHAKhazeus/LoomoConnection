@@ -9,5 +9,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class SetOriginRequest extends BaseRsp {
-    public Point2D point2D;
+    public float x;
+    public float y;
 }

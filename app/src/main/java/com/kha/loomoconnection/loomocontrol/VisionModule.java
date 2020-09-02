@@ -7,6 +7,7 @@ import android.util.Log;
 import com.kha.loomoconnection.restserver.controller.ContextBinder;
 import com.kha.loomoconnection.restserver.model.data.ImageData;
 import com.kha.loomoconnection.socketserver.SocketServer;
+import com.kha.loomoconnection.utils.TimerUtils;
 import com.segway.robot.algo.dts.DTSPerson;
 import com.segway.robot.algo.dts.PersonTrackingListener;
 import com.segway.robot.sdk.base.bind.ServiceBinder;
@@ -19,6 +20,9 @@ import com.segway.robot.sdk.voice.Speaker;
 import android.util.Base64;
 import android.view.Surface;
 
+import java.util.Objects;
+import java.util.TimerTask;
+
 public class VisionModule implements BaseModule{
     private static VisionModule instance = new VisionModule();
     public static VisionModule getInstance() {
@@ -27,6 +31,7 @@ public class VisionModule implements BaseModule{
     ServiceBinder.BindStateListener mBindStateListener;
     public DTS mDTS;
     boolean mBind;
+    public static boolean DTSInitialized = false;
     public Vision mVision;
     private byte[] depthBuffer = new byte[153600];
     private byte[] colorBuffer = new byte[640*2 * 480*2];
@@ -35,9 +40,12 @@ public class VisionModule implements BaseModule{
     boolean personReady;
 
     public void bootDTS() {
-        mDTS = mVision.getDTS();
-        mDTS.setVideoSource(DTS.VideoSource.CAMERA);
-        mDTS.start();
+        if (!DTSInitialized) {
+            mDTS = mVision.getDTS();
+            mDTS.setVideoSource(DTS.VideoSource.CAMERA);
+            mDTS.start();
+            DTSInitialized = true;
+        }
     }
 
     public boolean detectPersonandTrack() {
@@ -77,8 +85,10 @@ public class VisionModule implements BaseModule{
     }
 
     public void stopDTS() {
+        mDTS = mVision.getDTS();
         mDTS.stop();
-        personReady = true;
+        personReady = false;
+        DTSInitialized = false;
     }
 
     public byte[] getDepthData() {
@@ -152,6 +162,11 @@ public class VisionModule implements BaseModule{
             public void onBind() {
                 Log.i("Vision", "Start bind");
                 mBind = true;
+                try {
+                    bootDTS();
+                } catch (IllegalStateException e) {
+                    Log.i("Locomotion", Objects.requireNonNull(e.getMessage()));
+                }
                 mVision.startListenFrame(StreamType.DEPTH, new Vision.FrameListener(){
 
                     @Override

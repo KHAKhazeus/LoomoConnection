@@ -112,8 +112,8 @@ public class SensorModule implements BaseModule {
         sensorData.setAngularVelocity(mAngularVelocity);
 
         SensorData mWheelSpeed = mSensor.querySensorData(Arrays.asList(Sensor.WHEEL_SPEED)).get(0);
-        float mWheelSpeedL = mWheelSpeed.getFloatData()[0];
-        float mWheelSpeedR = mWheelSpeed.getFloatData()[1];
+        float mWheelSpeedL = mWheelSpeed.getIntData()[0];
+        float mWheelSpeedR = mWheelSpeed.getIntData()[1];
         sensorData.setWheelSpeedL(mWheelSpeedL);
         sensorData.setWheelSpeedR(mWheelSpeedR);
         return sensorData;
