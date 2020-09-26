@@ -134,6 +134,24 @@ public class LoomoController {
         return rsp;
     }
 
+    @PostMapping("/loomo/getColorImage")
+    BaseRsp getColorImage(@RequestBody ImageRequest requestData) {
+        BaseRsp rsp = new BaseRsp();
+        rsp.setId(requestData.getId());
+        rsp.setSuccess(true);
+        rsp.setData(VisionModule.getInstance().getColorData());
+        return rsp;
+    }
+
+    @PostMapping("/loomo/getDepthImage")
+    BaseRsp getDepthImage(@RequestBody ImageRequest requestData) {
+        BaseRsp rsp = new BaseRsp();
+        rsp.setId(requestData.getId());
+        rsp.setSuccess(true);
+        rsp.setData(VisionModule.getInstance().getDepthData());
+        return rsp;
+    }
+
     @PostMapping("/loomo/baseMode")
     BaseRsp changeBaseMode(@RequestBody LocomotionModeChangeRequest requestData) {
         LocomotionModule.getInstance().switchMode(requestData.mode);

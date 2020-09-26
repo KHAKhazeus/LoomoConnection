@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.kha.loomoconnection.restserver.controller.ContextBinder;
+import com.kha.loomoconnection.restserver.model.data.ColorImageData;
+import com.kha.loomoconnection.restserver.model.data.DepthImageData;
 import com.kha.loomoconnection.restserver.model.data.ImageData;
 import com.kha.loomoconnection.socketserver.SocketServer;
 import com.kha.loomoconnection.utils.TimerUtils;
@@ -103,6 +105,20 @@ public class VisionModule implements BaseModule{
         ImageData imgData = new ImageData();
 
         imgData.setColor(Base64.encodeToString(colorBuffer.clone(), Base64.DEFAULT));
+        imgData.setDepth(Base64.encodeToString(depthBuffer.clone(), Base64.DEFAULT));
+        return imgData;
+    }
+
+    public ColorImageData getColorImageData() {
+        ColorImageData imgData = new ColorImageData();
+
+        imgData.setColor(Base64.encodeToString(colorBuffer.clone(), Base64.DEFAULT));
+        return imgData;
+    }
+
+    public DepthImageData getDepthImageData() {
+        DepthImageData imgData = new DepthImageData();
+
         imgData.setDepth(Base64.encodeToString(depthBuffer.clone(), Base64.DEFAULT));
         return imgData;
     }
